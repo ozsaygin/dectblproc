@@ -1,9 +1,17 @@
 from collections import Counter
 import numpy as np
 import sys
+import operator
 
-
-def is_conditions_equal(i, j, conditions):
+def is_conditions_equal(i: int, j: int, conditions: list) -> bool:
+    """
+    :return:
+    :rtype: bool
+    :return:
+    :param i:
+    :param j:
+    :type conditions: list
+    """
     for char_index in range(len(conditions[i])):
         if conditions[i][char_index] == 'T' and conditions[j][char_index] == 'F':
             return False
@@ -12,7 +20,7 @@ def is_conditions_equal(i, j, conditions):
     return True
 
 
-def calculate_remaining_rule_count(rules, conditions):
+def calculate_remaining_rule_count(rules: list, conditions: list) -> int:
     total_valid_rules = 0
     for r in rules:
         total_valid_rules += pow(2, conditions[r - 1].count('-'))
@@ -144,48 +152,96 @@ print("Is table complete?  %d%% complete" % completeness)
 
 if is_redundant:
     print("Is table redundant? %s" % "Yes")
-    print("\t Redundant pairs of rules: %s" % str(fix_index(redundants))[1:-1])
+    output = ""
+    for pair in fix_index(redundants):
+        output += "(r" + str(pair[0]) + ", r" + str(pair[1])  + "), "
+    print("\t Redundant pairs of rules: %s" % output[:-2])
 else:
     print("Is table redundant? %s" % "No")
 
 if is_inconsistent:
     print("Is table inconsistent? %s" % "Yes")
-    print("\t Inconsistent pairs of rules: %s" % str(fix_index(inconsistents))[1:-1])
+    output = ""
+    for pair in fix_index(inconsistents):
+        output += "(r" + str(pair[0]) + ", r" + str(pair[1]) + "), "
+    print("\t Inconsistent pairs of rules: %s" % output[:-2])
 else:
     print("Is table inconsistent? %s" % "No")
 
+
+
+
+
 ### testing
 
-# from satispy import CnfFromString
-# from satispy.solver import Minisat
+from satispy import Variable, Cnf
+from satispy.solver import Minisat
+
+
+
+# algo: concatenate all expressions by & and check if the rule is satifiable
+
+bool_exps = []
+exps = []
+symbols = []
+for line in f:
+    if line.startswith('##'):
+        break
+
+    if line.startswith('c'):
+        bool_exps.append(line.split(":")[1][1:-1])
+
+print(bool_exps)
+
+
+from satispy import Variable, Cnf
+from satispy.solver import Minisat
+from satispy import CnfFromString
+from satispy.solver import Minisat
+
+expressions = []
+for c in conditions:
+    overall_expression = ""
+    for i in range(len(bool_exps)):
+        if c[i] == 'T': # true
+            overall_expression += "(" + bool_exps[i] + ") & "
+        elif c[i] == 'F': # false
+            overall_expression += "-(" + bool_exps[i] + ") & "
+    expressions.append(overall_expression[:-3])
+
+print(expressions)
+
+
+solver = Minisat()
+
+solutions = []
+symbols = None
+for e in expressions:
+    exp, symbols = CnfFromString.create(e)
+    solutions.append(solver.solve(exp))
 #
-# bool_exps = []
-# exps = []
-# symbols = []
-# for line in f:
-#     if line.startswith('##'):
-#         break
-#
-#     if line.startswith('c'):
-#         bool_exps.append(line.split()[1])
-#
-# for e in bool_exps:
-#     exp, symbol = CnfFromString.create(e)
-#     exps.append(exp)
-#     symbols.append(symbol)
+print("\n\n")
+print("Testsuite")
+print("=========")
 #
 #
-# solver = Minisat()
 #
-# solution = solver.solve(exp)
-#
-# if solution.success:
-#     for symbol_name in symbols.keys():
-#         print("%s is %s" % (symbol_name, solution[symbols[symbol_name]]))
-# else:
-#     print("The expression cannot be satisfied")
-#
-#
-# print("Testsuite")
-# print("=========")
-# print("\t ")
+out = ""
+for v in sorted(list(symbols.keys()), key=str.lower):
+    out += v + " "
+print('    %s' % out)
+print("    --------------")
+
+
+for s in range(1, len(solutions)+1):
+    solution = solutions[s-1]
+    out = "r" + str(s) + ":\t"
+    if s not in deleted_conditions:
+        if solution.success:
+            sorted_symbols = sorted(symbols.items(), key=operator.itemgetter(1))
+            for t in sorted_symbols:
+                out += str(solution[t[1]])[0] + "  "
+            print(out)
+        else:
+            print(out + "unsatisfiable rule")
+
