@@ -9,4 +9,9 @@ setup(name="dectblproc",
       url="http://github.com/ozsaygin/dectblproc",
       author="Oguz Ozsaygin",
       author_email="oguzozsaygin@sabanciuniv.edu", install_requires=['satispy']
+entry_point = """
+      # -*- Entry points: -*-
+      [console_scripts]
+      main=dectblproc.main:main
+      """,
       )
