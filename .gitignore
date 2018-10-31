@@ -33,10 +33,5 @@ cmake-build-*/
 !.vscode/extensions.json
 
 ###sample files###
-dt0
-dt1
-dt2
-dt3
-dt4
 
 .idea/*
