@@ -9,12 +9,15 @@ dectblproc is a command-line tool designed to process boolean decision tables an
 
 ## Development
 
+```
+docker build -t dectblproc # build the container from Dockerfile
+docker run -d dectblproc
+```
 ## Usage
 
-**The Quick Way**
-System Python (2.7.x or 3.x)
+**The Quick Way System Python (2.7.x or 3.x)**
 
-sudo pip install dectblproc
+`sudo pip install dectblproc`
 
 **The Recommended Way**
 
@@ -27,10 +30,16 @@ virtualenv venv
 source venv/bin/activate
 pip install dectblproc
 # Python 3 users: sudo pip3 install dectblproc
-`dectblproc <inputfilename>`
+dectblproc <inputfilename>
 ```
 
-conda env
+[conda env](https://conda.io/docs/user-guide/tasks/manage-environments.html)
+```
+conda create -n venv
+source activate venv
+pip install dectblproc
+dectblproc <inputfilename>
+```
 
 ## Sample Input File
 ```
