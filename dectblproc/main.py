@@ -1,21 +1,19 @@
-from collections import Counter
-import numpy as np
-import sys
 import operator
+import sys
 
-def is_conditions_equal(i: int, j: int, conditions: list) -> bool:
+
+def is_conditions_equal(first_index: int, second_index: int, conditions_list: list) -> bool:
     """
-    :return:
     :rtype: bool
-    :return:
-    :param i:
-    :param j:
-    :type conditions: list
+    :return: Returns true if conditions are logically equal, otherwise false
+    :param first_index: Index of first condition
+    :param second_index: Index of second condition
+    :param conditions_list: List containing conditions for each rule
     """
-    for char_index in range(len(conditions[i])):
-        if conditions[i][char_index] == 'T' and conditions[j][char_index] == 'F':
+    for char_index in range(len(conditions_list[first_index])):
+        if conditions_list[first_index][char_index] == 'T' and conditions_list[second_index][char_index] == 'F':
             return False
-        elif conditions[j][char_index] == 'T' and conditions[i][char_index] == 'F':
+        elif conditions_list[second_index][char_index] == 'T' and conditions_list[first_index][char_index] == 'F':
             return False
     return True
 
@@ -154,7 +152,7 @@ if is_redundant:
     print("Is table redundant? %s" % "Yes")
     output = ""
     for pair in fix_index(redundants):
-        output += "(r" + str(pair[0]) + ", r" + str(pair[1])  + "), "
+        output += "(r" + str(pair[0]) + ", r" + str(pair[1]) + "), "
     print("\t Redundant pairs of rules: %s" % output[:-2])
 else:
     print("Is table redundant? %s" % "No")
@@ -168,18 +166,9 @@ if is_inconsistent:
 else:
     print("Is table inconsistent? %s" % "No")
 
-
-
-
-
 ### testing
 
-from satispy import Variable, Cnf
-from satispy.solver import Minisat
-
-
-
-# algo: concatenate all expressions by & and check if the rule is satifiable
+# algo: concatenate all expressions by & and check if the rule is satisfiable
 
 bool_exps = []
 exps = []
@@ -191,11 +180,8 @@ for line in f:
     if line.startswith('c'):
         bool_exps.append(line.split(":")[1][1:-1])
 
-print(bool_exps)
+# print(bool_exps)
 
-
-from satispy import Variable, Cnf
-from satispy.solver import Minisat
 from satispy import CnfFromString
 from satispy.solver import Minisat
 
@@ -203,45 +189,44 @@ expressions = []
 for c in conditions:
     overall_expression = ""
     for i in range(len(bool_exps)):
-        if c[i] == 'T': # true
+        if c[i] == 'T':  # true
             overall_expression += "(" + bool_exps[i] + ") & "
-        elif c[i] == 'F': # false
+        elif c[i] == 'F':  # false
             overall_expression += "-(" + bool_exps[i] + ") & "
     expressions.append(overall_expression[:-3])
 
-print(expressions)
-
+# print(expressions)
 
 solver = Minisat()
 
 solutions = []
 symbols = None
+sym_junkyard = list()
 for e in expressions:
     exp, symbols = CnfFromString.create(e)
+    sym_junkyard += list(symbols.keys())
     solutions.append(solver.solve(exp))
 #
+
 print("\n\n")
 print("Testsuite")
 print("=========")
-#
-#
-#
+
 out = ""
-for v in sorted(list(symbols.keys()), key=str.lower):
+for v in sorted(list(set(sym_junkyard)), key=str.lower):
     out += v + " "
-print('    %s' % out)
-print("    --------------")
+print('   \t    %s' % out)
+print("   \t--------------")
 
-
-for s in range(1, len(solutions)+1):
-    solution = solutions[s-1]
+for s in range(1, len(solutions) + 1):
+    solution = solutions[s - 1]
     out = "r" + str(s) + ":\t"
     if s not in deleted_conditions:
         if solution.success:
+            for var in sym_junkyard:
             sorted_symbols = sorted(symbols.items(), key=operator.itemgetter(1))
             for t in sorted_symbols:
                 out += str(solution[t[1]])[0] + "  "
             print(out)
-        else:
-            print(out + "unsatisfiable rule")
-
+        # else: # debug
+        #     print(out + "unsatisfiable rule")
