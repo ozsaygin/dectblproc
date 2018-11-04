@@ -1,7 +1,9 @@
 import sys
+from typing import List
 
 from satispy import CnfFromString
 from satispy.solver import Minisat
+from tabulate import tabulate
 
 
 def is_conditions_equal(first_index: int, second_index: int, conditions_list: list) -> bool:
@@ -57,50 +59,84 @@ def merge_values(val_lst: list) -> list:
     return merged_lst
 
 
-def generate_test_suite(conditions: list, expressions: list, discarded_conditions: list):
+def replace_char(condition, char_index, char):
+    """
+
+    :param condition:
+    :param char_index:
+    :param char:
+    :return:
+    """
+    condition = list(condition)
+    condition[char_index] = char
+    return ''.join(condition)
+
+
+def expand_all_conditions(conditions: List[str]) -> List[str]:
+    """
+
+    :param conditions: list contains a condition with at least one don't care value
+    :return: returns list of conditions containing expanded version of original condition by considering don't cares
+    """
+    expanded_conditions = list()
+    for c in conditions:
+        char_index = c.find('-')
+        if char_index >= 0:
+            conditions.append(replace_char(c, char_index, 'T'))
+            conditions.append(replace_char(c, char_index, 'F'))
+
+    return [c for c in conditions if c.count('-') == 0]
+
+
+def generate_test_suite(conditions: list, expressions: list, discarded_conditions: list) -> list:
     """
     :param conditions: list of conditions in string form
     :param expressions: list of boolean expression corresponding to each condition existing
     :param discarded_conditions: list of conditions which will be discarded
+    :return: returns list of lists containing row values for test suite table
     """
+
+    expression_problems = list()
     for c in conditions:
-        overall_expression = ""
-        for i in range(len(expressions)):
-            if c[i] == 'T':  # true
-                overall_expression += "(" + expressions[i] + ") & "
-            elif c[i] == 'F':  # false
-                overall_expression += "-(" + expressions[i] + ") & "
-        expressions(overall_expression[:-3])
+        if c.count('-') > 0:  # if there is any don't care condition
+            expanded_conditions = expand_all_conditions([c])
+            rule_expression = ""
+            for exp_c in expanded_conditions:
+                for char_index in range(len(exp_c)):
+                    if exp_c[char_index] == 'T':  # condition is true
+                        rule_expression += "(" + expressions[char_index] + ") & "
+                    elif exp_c[char_index] == 'F':  # condition is false
+                        rule_expression += "-(" + expressions[char_index] + ") & "
+                rule_expression += "(" + rule_expression[:-3] + ") | "
+            expression_problems.append(rule_expression[:-3])
 
-    solver = Minisat()
+        else:  # there is no don't care condition
+            rule_expression = ""
+            for char_index in range(len(c)):
+                if c[char_index] == 'T':  # condition is true
+                    rule_expression += "(" + expressions[char_index] + ") & "
+                elif c[char_index] == 'F':  # condition is false
+                    rule_expression += "-(" + expressions[char_index] + ") & "
+            expression_problems.append(rule_expression[:-3])
+
     solutions = list()
-    sym_junkyard = list()
+    solver = Minisat()
+    exp = None
+    symbols = dict()
+    table = list()
+    for p in range(len(expression_problems)):
+        exp, symbols = CnfFromString.create(expression_problems[p])
+        solution = solver.solve(exp)
+        rule_name = "r" + str(p + 1)
+        boolean_values = [rule_name]
+        if solution.success:
+            for symbol_name in sorted(symbols.keys()):
+                boolean_values.append(str(solution[symbols[symbol_name]])[0])
+            if p + 1 not in discarded_conditions:
+                table.append(boolean_values)
 
-    for e in expressions:
-        exp, symbols = CnfFromString.create(e)
-        sym_junkyard += list(symbols.keys())
-        solutions.append(solver.solve(exp))
-
-    print("\n\n")
-    print("Testsuite")
-    print("=========")
-
-    out = ""
-    for v in sorted(list(set(sym_junkyard)), key=str.lower):
-        out += v + " "
-    print('   \t    %s' % out)
-    print("   \t--------------")
-
-    for s in range(1, len(solutions) + 1):
-        solution = solutions[s - 1]
-        out = "r" + str(s) + ":\t"
-        if s not in discarded_conditions:
-            if solution.success:
-                exp, symbols = CnfFromString.create()
-                sol = solver.solve(expressions[s - 1])
-                for var in sym_junkyard:
-                    out += str(solution[t[1]])[0] + "  "
-                print(out)
+    headers = ["rules"] + sorted(symbols.keys())
+    print(tabulate(table, headers, tablefmt="fancy_grid"))
 
 
 def main(argv):
@@ -158,15 +194,21 @@ def main(argv):
 
     # always picks right element in tuple to discard
     for p in increment_pair(redundant):
-        discarded_conditions.append(p[1])
+        if conditions[p[0] - 1].count('-') > conditions[p[1] - 1].count('-'):
+            discarded_conditions.append(p[1])
+        else:
+            discarded_conditions.append(p[0])
 
     for p in increment_pair(inconsistent):
-        discarded_conditions.append(p[1])
+        if conditions[p[0] - 1].count('-') > conditions[p[1] - 1].count('-'):
+            discarded_conditions.append(p[1])
+        else:
+            discarded_conditions.append(p[0])
 
-    condition_count = len(conditions) - len(set(discarded_conditions))
+    discarded_conditions = set(discarded_conditions)
     rule_indices = list(range(1, len(conditions) + 1))
 
-    for r in set(discarded_conditions):
+    for r in discarded_conditions:
         rule_indices.remove(r)
 
     completeness = calculate_remaining_rule_count(rule_indices, conditions) * 100 / total_conditions
@@ -197,7 +239,13 @@ def main(argv):
     # generating a test suite
     # concatenate all expressions by & operator and check if the rule is satisfiable
 
-    # generate_test_suite(conditions, expressions, discarded_conditions)
+    print("Testsuite")
+    print("=========")
+
+    # discarded conditions in human readable indices
+    generate_test_suite(conditions, expressions, discarded_conditions)
+    # print(tabulate(header, generate_test_suite(conditions, expressions, discarded_conditions)))
+    # print(tabulate)
 
 
 main(sys.argv)
