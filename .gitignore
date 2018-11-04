@@ -32,6 +32,5 @@ cmake-build-*/
 !.vscode/launch.json
 !.vscode/extensions.json
 
-###sample files###
 
 .idea/*
