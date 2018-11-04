@@ -1,44 +1,26 @@
 # dectblproc
 
-dectblproc is a command-line tool designed to process boolean decision tables and 
+dectblproc is a command-line tool designed to process boolean decision
+tables and creates a test suite for each satisfiable rule in the decision table.
 
 
 ## Installation 
-
-`pip install dectblproc`
-
-## Development
-
 ```
-docker build -t dectblproc # build the container from Dockerfile
-docker run -d dectblproc
+$ cd dectblproc
+$ ./setup.py install
 ```
+
+## Uninstallation
+```
+$ pip uninstall dectblproc 
+```
+
 ## Usage
-
-**The Quick Way System Python (2.7.x or 3.x)**
-
-`sudo pip install dectblproc`
-
-**The Recommended Way**
-
-[virtualenv](https://docs.python-guide.org/dev/virtualenvs/)
-
 ```
-virtualenv venv
-# Python 3 users : use -p to specify your Python 3 location:
-# virtualenv -p /usr/bin/python3 venv
-source venv/bin/activate
-pip install dectblproc
-# Python 3 users: sudo pip3 install dectblproc
-dectblproc <inputfilename>
-```
+$ dectblproc dt
 
-[conda env](https://conda.io/docs/user-guide/tasks/manage-environments.html)
-```
-conda create -n venv
-source activate venv
-pip install dectblproc
-dectblproc <inputfilename>
+# You may also run it by typing (if you don't want to install it):
+# python dectblproc.py dt
 ```
 
 ## Sample Input File
@@ -55,3 +37,32 @@ a2 X....X..
 a3 .X......
 a4 ..XXX.XX
 ``` 
+
+## Sample Output
+
+```
+$ python dectblproc.py dt0
+Processing file: dt0 
+Is table complete?  100% complete
+Is table redundant? No
+Is table inconsistent? No
+Testsuite
+=========
+╒═════════╤══════╤══════╤══════╤══════╤══════╕
+│ rules   │ o1   │ o2   │ o3   │ o4   │ o5   │
+╞═════════╪══════╪══════╪══════╪══════╪══════╡
+│ r1      │ F    │ F    │ T    │ T    │ T    │
+├─────────┼──────┼──────┼──────┼──────┼──────┤
+│ r2      │ T    │ F    │ T    │ T    │ T    │
+├─────────┼──────┼──────┼──────┼──────┼──────┤
+│ r5      │ F    │ F    │ F    │ T    │ F    │
+├─────────┼──────┼──────┼──────┼──────┼──────┤
+│ r6      │ T    │ F    │ F    │ T    │ F    │
+├─────────┼──────┼──────┼──────┼──────┼──────┤
+│ r7      │ F    │ F    │ F    │ F    │ F    │
+├─────────┼──────┼──────┼──────┼──────┼──────┤
+│ r8      │ T    │ F    │ F    │ F    │ F    │
+╘═════════╧══════╧══════╧══════╧══════╧══════╛
+
+
+```
