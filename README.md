@@ -3,7 +3,6 @@
 dectblproc is a command-line tool designed to process boolean decision
 tables and creates a test suite for each satisfiable rule in the decision table.
 
-
 ## Installation 
 ```
 $ cd dectblproc
@@ -16,10 +15,11 @@ $ pip uninstall dectblproc
 ```
 
 ## Usage
-```
-$ dectblproc dt
+``` 
+$ cd dectblproc
+$ dectblproc examples/dt0
 
-# You may also run it by typing (if you don't want to install it):
+# You can also run it by typing (if you don't want to install it):
 # python dectblproc.py dt
 ```
 
