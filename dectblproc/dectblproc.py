@@ -6,6 +6,17 @@ from satispy.solver import Minisat
 from tabulate import tabulate
 
 
+# TODO: Add support for cli arguments
+# def parse_argument():
+#     """
+#     Parse the arguments
+#     """
+#     parser = argparse.ArgumentParser(description=__doc__ or "")
+#     parser.add_argument()
+#     return parser.parse_args()
+
+
+
 def is_conditions_equal(first_index: int, second_index: int, conditions_list: list) -> bool:
     """
     :return: Returns true if conditions are logically equal, otherwise false
@@ -59,12 +70,12 @@ def merge_values(val_lst: list) -> list:
     return merged_lst
 
 
-def replace_char(condition, char_index, char):
+def replace_char(condition: str, char_index: int, char: str):
     """
 
-    :param condition:
-    :param char_index:
-    :param char:
+    :param condition: whole condition in which a char will be replaced with char in param
+    :param char_index: the index of character replaced by char
+    :param char: new character which will replace the character in index given
     :return:
     """
     condition = list(condition)
@@ -88,11 +99,10 @@ def expand_all_conditions(conditions: List[str]) -> List[str]:
     return [c for c in conditions if c.count('-') == 0]
 
 
-def generate_test_suite(conditions: list, expressions: list, discarded_conditions: list) -> list:
+def generate_test_suite(conditions: list, expressions: list):
     """
     :param conditions: list of conditions in string form
     :param expressions: list of boolean expression corresponding to each condition existing
-    :param discarded_conditions: list of conditions which will be discarded
     :return: returns list of lists containing row values for test suite table
     """
 
@@ -119,9 +129,7 @@ def generate_test_suite(conditions: list, expressions: list, discarded_condition
                     rule_expression += "-(" + expressions[char_index] + ") & "
             expression_problems.append(rule_expression[:-3])
 
-    solutions = list()
     solver = Minisat()
-    exp = None
     symbols = dict()
     table = list()
     for p in range(len(expression_problems)):
@@ -132,14 +140,16 @@ def generate_test_suite(conditions: list, expressions: list, discarded_condition
         if solution.success:
             for symbol_name in sorted(symbols.keys()):
                 boolean_values.append(str(solution[symbols[symbol_name]])[0])
-            if p + 1 not in discarded_conditions:
-                table.append(boolean_values)
+            table.append(boolean_values)
+            # use this line if you want not to generate test suite for non-unique rules
+            # if p + 1 not in discarded_conditions:
+            #     table.append(boolean_values)
 
     headers = ["rules"] + sorted(symbols.keys())
     print(tabulate(table, headers, tablefmt="fancy_grid"))
 
 
-def main(argv):
+def main():
     # extract file to a buffer
     filename = sys.argv[1]
     buffer = open(filename).readlines()
@@ -242,10 +252,5 @@ def main(argv):
     print("Testsuite")
     print("=========")
 
-    # discarded conditions in human readable indices
-    generate_test_suite(conditions, expressions, discarded_conditions)
-    # print(tabulate(header, generate_test_suite(conditions, expressions, discarded_conditions)))
-    # print(tabulate)
-
-
-main(sys.argv)
+    # discarded conditions in form of human readable indices [1 .. n]
+    generate_test_suite(conditions, expressions)
