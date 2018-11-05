@@ -18,9 +18,6 @@ $ pip uninstall dectblproc
 ``` 
 $ cd dectblproc
 $ dectblproc examples/dt0
-
-# You can also run it by typing (if you don't want to install it):
-# python dectblproc.py dt
 ```
 
 ## Sample Input File
